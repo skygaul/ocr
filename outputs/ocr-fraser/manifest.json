@@ -1,0 +1,82 @@
+{
+  "task": "OCR 표 이미지 문서화 (선택 과제 B)",
+  "table": "fraser",
+  "source": {
+    "table": "No. 11 — Holdings of bills discounted and bills bought by Federal Reserve Banks, by maturities, 1934–35 [In thousands of dollars]",
+    "publisher": "Board of Governors of the Federal Reserve System (FRASER 아카이브)",
+    "document": "Annual Report of the Federal Reserve System, 1935 (published 1936)",
+    "pdf_page": 98,
+    "printed_page": 91,
+    "license": "미국 연방정부 발행 퍼블릭 도메인 자료 (과제 안내 기준)",
+    "image_note": "과제에서 제공한 200 dpi 표 이미지"
+  },
+  "input": {
+    "path": "input/fraser-table.png",
+    "sha256": "10b9f09dd6d8945592a590d6a846f6b1f20271d07234f54c542b65a3c14e1efe",
+    "size_px": [
+      925,
+      1390
+    ],
+    "crop_box_xyxy": null
+  },
+  "ocr": {
+    "lang": "en",
+    "models": {
+      "detection": "PP-OCRv6_medium_det",
+      "recognition": "PP-OCRv6_medium_rec"
+    },
+    "settings": {
+      "enable_mkldnn": false,
+      "use_doc_orientation_classify": false,
+      "use_doc_unwarping": false,
+      "use_textline_orientation": false,
+      "device": "cpu"
+    },
+    "ran_at": "2026-11-10T20:15:46",
+    "line_count": 354
+  },
+  "packages": {
+    "paddleocr": "3.7.0",
+    "paddlepaddle": "3.3.1",
+    "paddlex": "3.7.2",
+    "opencv-python-headless": "5.0.0.93",
+    "opencv-contrib-python": "4.10.0.84",
+    "numpy": "2.3.5",
+    "pillow": "13.0.0",
+    "openpyxl": "3.1.5",
+    "flask": "3.1.3"
+  },
+  "environment": {
+    "python": "3.13.15",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "executed_where": "로컬 PC (Windows, CPU 전용, 외부 서버로 이미지 전송 없음)"
+  },
+  "review": {
+    "thresholds": {
+      "low_confidence": 0.9
+    },
+    "status_counts": {
+      "auto_ok": 335,
+      "confirmed": 8,
+      "corrected": 5,
+      "source_empty": 51,
+      "needs_check": 0
+    },
+    "corrections_file": "outputs/ocr-fraser/corrections.json",
+    "corrections_sha256": "24364e8f7e068397a189ef8c790b087277ff4ba74e5c9dbf60ca799047a9b357"
+  },
+  "built_at": "2026-11-10T20:18:20",
+  "outputs": [
+    "corrections.json",
+    "document.md",
+    "input_fraser-table.png",
+    "ocr_lines.json",
+    "ocr_meta.json",
+    "ocr_overlay.png",
+    "raw_ocr.json",
+    "review.json",
+    "review_overlay.png",
+    "table-crop.png",
+    "table.csv"
+  ]
+}

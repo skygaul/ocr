@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>표 검토</title>
+<script src="/static/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600&family=Source+Serif+4:wght@400;600&display=swap">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+  .layout { display: grid; gap: var(--s4); margin-top: var(--s4); align-items: start;
+            grid-template-columns: minmax(260px, .7fr) minmax(0, 1.7fr) 320px;
+            grid-template-areas: "view tbl edit"; }
+  #viewer { grid-area: view; position: sticky; top: var(--s3); max-height: calc(100vh - 2 * var(--s3)); overflow: auto; }
+  #tblpanel { grid-area: tbl; }
+  #tblwrap { max-height: 72vh; overflow: auto; }
+  #tblwrap thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  #edit { grid-area: edit; position: sticky; top: var(--s3); }
+  #edit h2 { text-transform: none; letter-spacing: 0; font-size: var(--fs-base); color: var(--fg); display: flex; align-items: center; gap: var(--s2); }
+  #edit .close { margin-left: auto; display: none; }
+  .hint { background: color-mix(in srgb, var(--st-corrected) 14%, transparent); border-radius: 6px; padding: 6px 9px; margin-top: var(--s2); font-size: 13px; }
+  .hint div + div { margin-top: 2px; }
+  .kv { font-size: var(--fs-sm); color: var(--mute); margin-top: var(--s1); overflow-wrap: anywhere; }
+  .btns { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+  #msg { font-size: var(--fs-sm); color: var(--mute); align-self: center; }
+  .flow { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--s2); align-items: end; margin-top: var(--s3); }
+  #tbl td, #tbl th { padding-left: 7px; padding-right: 7px; }
+  .flow .arrow { padding-bottom: 8px; color: var(--mute); }
+  .flow .raw { background: var(--surface-2); border: 1px dashed var(--line); border-radius: 6px; padding: 7px 9px; min-height: 36px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  @media (max-width: 1400px) {
+    .layout { grid-template-columns: minmax(260px, .8fr) minmax(0, 1.5fr); grid-template-areas: "view tbl" "view edit"; }
+    #edit { position: static; }
+  }
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "view" "tbl"; }
+    #viewer { position: static; max-height: none; }
+    #tblwrap { max-height: none; overflow-x: auto; }
+    table.rt { font-size: 12.5px; }
+    table.rt td, table.rt thead th { padding: 3px 6px; }
+    #edit { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 62vh; overflow: auto; border-radius: 12px 12px 0 0;
+            box-shadow: 0 -8px 24px rgb(0 0 0 / .18);
+            padding-left: max(var(--s4), env(safe-area-inset-left, 0px)); padding-right: max(var(--s4), env(safe-area-inset-right, 0px));
+            padding-bottom: calc(var(--s4) + env(safe-area-inset-bottom, 0px)); }
+    #edit .close { display: inline-block; }
+    body.sheet-open .wrap { padding-bottom: 62vh; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>표 검토</h1>
+  <nav aria-label="표 선택">
+    <a id="tab-census" href="/review?table=census">Census Table 1</a>
+    <a id="tab-fraser" href="/review?table=fraser">FRASER No. 11</a>
+  </nav>
+  <span class="spacer"></span>
+  <nav aria-label="결과 파일">
+    <a href="/">OCR 업로드</a>
+    <a id="l-csv" target="_blank" rel="noopener">table.csv</a>
+    <a id="l-doc" target="_blank" rel="noopener">document.md</a>
+    <a id="l-man" target="_blank" rel="noopener">manifest.json</a>
+  </nav>
+  <button id="theme-btn" class="btn theme-btn" type="button"></button>
+</header>
+
+<div class="wrap">
+  <section class="panel summary" id="summary" aria-live="polite">
+    <div class="bar" id="bar" role="img" aria-label="검토 상태 비율"></div>
+    <div class="legend" id="legend"></div>
+    <div class="checkline" id="checks"></div>
+  </section>
+
+  <div class="layout">
+    <section class="panel" id="viewer">
+      <h2>원본 · 칸을 누르면 오른쪽에서 검토</h2>
+      <div class="imgwrap"><img id="img" alt="원본 표 이미지"><svg id="ov" aria-hidden="true"></svg></div>
+    </section>
+
+    <section class="panel" id="tblpanel">
+      <h2>복원된 표</h2>
+      <div id="tblwrap" class="scroll-x"><table class="rt" id="tbl"></table></div>
+      <div id="notes" class="notes"></div>
+    </section>
+
+    <aside class="panel" id="edit" hidden aria-label="칸 검토">
+      <h2><span id="est" class="st"></span><span id="et"></span><button class="btn close" id="bclose" type="button">닫기</button></h2>
+      <div class="kv" id="ek"></div>
+      <div class="hint" id="eh" hidden></div>
+      <div class="flow">
+        <div><div class="kv">원시 OCR</div><div class="raw mono" id="eraw"></div></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="field" style="margin:0"><label for="ev">최종값 <span id="vhelp"></span></label><input id="ev" autocomplete="off"></div>
+      </div>
+      <div class="field"><label for="ef">각주 번호 (선택)</label><input id="ef" style="width:80px" autocomplete="off"></div>
+      <div class="field"><label for="ee">근거: 원본에서 무엇을 봤는지 (수정·확인 필요 표시에 필수)</label><textarea id="ee" rows="3"></textarea></div>
+      <div class="btns">
+        <button class="btn primary" id="bconfirm" type="button">원본과 일치</button>
+        <button class="btn" id="bcorrect" type="button">이 값으로 수정</button>
+        <button class="btn danger" id="bflag" type="button">확인 필요로 표시</button>
+        <button class="btn" id="bclear" type="button">기록 지우기</button>
+        <span id="msg" role="status"></span>
+      </div>
+      <div class="kv" id="elog" style="margin-top:12px"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const TABLE = new URLSearchParams(location.search).get('table') === 'fraser' ? 'fraser' : 'census';
+const DIR = TABLE === 'fraser' ? 'ocr-fraser' : 'ocr';
+const ORDER = ['needs_check', 'corrected', 'confirmed', 'source_empty', 'auto_ok'];
+const LABEL = {needs_check: '확인 필요', corrected: '수정함', confirmed: '원본 대조 일치', auto_ok: '규칙 통과(대조 기록 없음)', source_empty: '원본에 값 없음'};
+const SUP = {'1': '¹', '2': '²'};
+const STROKE = {needs_check: 'var(--st-needs_check)', corrected: 'var(--st-corrected)', confirmed: 'var(--st-confirmed)',
+                source_empty: 'var(--st-source_empty)', auto_ok: 'transparent'};
+let R = null, byId = new Map(), sel = null;
+
+document.getElementById('tab-' + TABLE).setAttribute('aria-current', 'page');
+$('l-csv').href = `/outputs/${DIR}/table.csv`;
+$('l-doc').href = `/outputs/${DIR}/document.md`;
+$('l-man').href = `/outputs/${DIR}/manifest.json`;
+$('img').src = `/outputs/${DIR}/table-crop.png`;
+document.title = (TABLE === 'fraser' ? 'FRASER No. 11' : 'Census Table 1') + ' 검토';
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[ch]));
+const fmt = v => v == null ? '' : Number(v).toLocaleString('en-US');
+const mark = c => c.status === 'auto_ok' ? '' : `<span class="st st-${c.status}" title="${LABEL[c.status]}" aria-label="${LABEL[c.status]}"></span>`;
+
+async function load() {
+  const r = await fetch('/api/review?table=' + TABLE);
+  const d = await r.json();
+  if (!r.ok) { $('summary').textContent = d.error; return; }
+  setData(d);
+  const q = new URLSearchParams(location.search).get('sel');
+  if (q && byId.has(q)) select(q);
+}
+function setData(d) { R = d; byId = new Map(d.cells.map(c => [c.id, c])); render(); }
+
+function valueText(c) {
+  if (c.status === 'source_empty') return '';
+  if (c.final == null) return '<span class="warn">확인 필요</span>';
+  return fmt(c.final) + (c.footnote ? `<sup>${SUP[c.footnote] || c.footnote}</sup>` : '');
+}
+
+function render() { renderSummary(); renderTable(); renderOverlay(); if (sel && byId.has(sel)) fillEdit(); markSel(); }
+
+function renderSummary() {
+  const cnt = {}; R.cells.forEach(c => cnt[c.status] = (cnt[c.status] || 0) + 1);
+  $('bar').innerHTML = ORDER.filter(k => cnt[k]).map(k => `<span class="st-${k}" style="--c:var(--st-${k});flex:${cnt[k]}" title="${LABEL[k]} ${cnt[k]}"></span>`).join('');
+  $('legend').innerHTML = ORDER.filter(k => cnt[k]).map(k => `<span><span class="st st-${k}"></span>${LABEL[k]} <b>${cnt[k]}</b></span>`).join('');
+  const fc = R.final_checks, ok = fc.filter(c => c.result === '일치').length, bad = fc.filter(c => c.result !== '일치');
+  $('checks').innerHTML = (bad.length ? `<span class="bad-text">합계 검산 ${fc.length}건 중 ${ok}건 일치</span> · ` + bad.slice(0, 3).map(c => esc(c.scope)).join(', ') :
+    `<span class="ok-text">합계 검산 ${fc.length}건 모두 일치</span>`) +
+    (cnt.needs_check ? ` · <span class="bad-text">확인 필요 ${cnt.needs_check}칸</span>` : '');
+}
+
+function renderTable() {
+  const ncols = Math.max(...R.cells.filter(c => c.col != null).map(c => c.col)) + 1;
+  const cell = (c, tag, attrs = '', inner, inLab = false) => `<${tag} data-id="${c.id}" tabindex="0" role="button" aria-label="${esc(c.id)} ${LABEL[c.status]}" class="${c.status === 'needs_check' || c.status === 'corrected' ? 'tint-' + c.status : ''} ${attrs}">${inLab ? '' : mark(c)}${inner ?? esc(String(c.final ?? c.raw).replace(/\n/g, ' '))}</${tag}>`;
+  let h = '';
+  const caps = R.cells.filter(c => c.kind === 'caption');
+  if (caps.length) h += '<caption>' + caps.map(c => `<div data-id="${c.id}" tabindex="0" role="button">${mark(c)}${esc(c.final ?? c.raw)}</div>`).join('') + '</caption>';
+  const spans = R.spans || [], spanCells = R.cells.filter(c => c.kind === 'span');
+  const hdr = []; for (let k = 0; k < ncols; k++) hdr.push(byId.get('H0C' + k));
+  const covered = k => spans.some(s => s.c0 <= k && k <= s.c1);
+  h += '<thead>';
+  if (spans.length) {
+    let r1 = '', r2 = '';
+    for (let k = 0; k < ncols; k++) {
+      const si = spans.findIndex(s => s.c0 === k);
+      if (si >= 0) r1 += cell(spanCells[si], 'th', `" colspan="${spans[si].c1 - spans[si].c0 + 1}`);
+      else if (!covered(k) && hdr[k]) r1 += cell(hdr[k], 'th', '" rowspan="2');
+      if (covered(k) && hdr[k]) r2 += cell(hdr[k], 'th');
+    }
+    h += `<tr>${r1}</tr><tr>${r2}</tr>`;
+  } else {
+    h += '<tr>' + hdr.map(c => c ? cell(c, 'th') : '<th></th>').join('') + '</tr>';
+  }
+  h += '</thead><tbody>';
+  const rows = {};
+  R.cells.filter(c => ['label', 'value', 'section'].includes(c.kind)).forEach(c => (rows[c.row] ||= {})[c.col] = c);
+  for (const r of Object.keys(rows).sort((a, b) => a - b)) {
+    const row = rows[r];
+    if (row[0].kind === 'section') { h += `<tr>${cell(row[0], 'td', `sec" colspan="${ncols}`)}</tr>`; continue; }
+    h += '<tr>';
+    for (let k = 0; k < ncols; k++) {
+      const c = row[k];
+      if (!c) { h += '<td></td>'; continue; }
+      if (c.kind === 'label') h += cell(c, 'td', '', `<span class="lab">${mark(c)}<span class="lt">${esc(c.final ?? c.raw)}</span><span class="lead"></span></span>`, true);
+      else h += cell(c, 'td', 'num', valueText(c));
+    }
+    h += '</tr>';
+  }
+  h += '</tbody>';
+  $('tbl').innerHTML = h;
+
+  const notes = R.cells.filter(c => c.kind === 'note').map(c => `<div data-id="${c.id}" tabindex="0" role="button">${mark(c)}${esc(c.final ?? c.raw)}</div>`);
+  (R.warnings || []).forEach(w => notes.push(`<div class="warn">⚠ ${esc(w)}</div>`));
+  $('notes').innerHTML = notes.join('');
+}
+
+function renderOverlay() {
+  const img = $('img'), W = img.naturalWidth || 1103, H = img.naturalHeight || 520;
+  $('ov').setAttribute('viewBox', `0 0 ${W} ${H}`);
+  let s = '';
+  for (const c of R.cells) {
+    let b = c.box;
+    if (!b && c.status === 'source_empty' && TABLE === 'census') {
+      const lab = byId.get(`R${c.row}C0`), nb = byId.get(`R${c.row - 1}C${c.col}`);
+      if (lab?.box && nb?.box) b = [nb.box[0], lab.box[1], nb.box[2], lab.box[3]];
+    }
+    if (!b) continue;
+    s += `<rect data-id="${c.id}" x="${b[0] - 2}" y="${b[1] - 2}" width="${b[2] - b[0] + 4}" height="${b[3] - b[1] + 4}" style="stroke:${STROKE[c.status]}"><title>${esc(c.id)} · ${LABEL[c.status]}</title></rect>`;
+  }
+  $('ov').innerHTML = s;
+}
+$('img').addEventListener('load', () => R && renderOverlay());
+
+/* 선택은 클래스만 바꾼다 (전체를 다시 그리지 않는다) */
+function markSel() {
+  document.querySelectorAll('.is-sel').forEach(el => el.classList.remove('is-sel'));
+  if (sel) document.querySelectorAll(`[data-id="${sel}"]`).forEach(el => el.classList.add('is-sel'));
+}
+function select(id) {
+  sel = id; fillEdit(); markSel();
+  $('edit').hidden = false; document.body.classList.add('sheet-open');
+  document.querySelector(`#tbl [data-id="${id}"]`)?.scrollIntoView({block: 'nearest', inline: 'nearest'});
+}
+function closeEdit() { sel = null; $('edit').hidden = true; document.body.classList.remove('sheet-open'); markSel(); }
+
+for (const el of [$('tbl'), $('ov'), $('notes')]) {
+  el.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if (t) select(t.dataset.id); });
+  el.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const t = e.target.closest('[data-id]'); if (t) { e.preventDefault(); select(t.dataset.id); }
+  });
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sel) closeEdit(); });
+$('bclose').onclick = closeEdit;
+
+function fillEdit() {
+  const c = byId.get(sel);
+  $('est').className = 'st st-' + c.status;
+  $('et').textContent = `${c.id} · ${LABEL[c.status]}`;
+  $('ek').textContent = `행: ${(c.row_label ?? '-').replace(/\n/g, ' ')} · 열: ${c.col_title ?? c.kind}` + (c.score != null ? ` · 신뢰도 ${c.score.toFixed(2)}` : '');
+  const parts = [...c.reasons, c.hint ? '힌트: ' + c.hint : ''].filter(Boolean);
+  const h = $('eh'); h.hidden = !parts.length; h.innerHTML = parts.map(p => `<div>${esc(p)}</div>`).join('');
+  const cr = R.corrections[c.id] || {};
+  $('eraw').textContent = c.raw === '' ? '(비어 있음)' : c.raw;
+  $('ev').value = c.kind === 'value' ? (c.final == null ? '' : c.final) : (c.final ?? c.raw);
+  $('vhelp').textContent = c.kind === 'value' ? '(숫자만, 비우면 값 없음)' : '';
+  $('ef').value = cr.footnote || ''; $('ee').value = cr.evidence || '';
+  $('elog').textContent = cr.evidence ? '기록된 근거: ' + cr.evidence : '아직 사람 대조 기록이 없습니다.';
+  $('msg').textContent = '';
+}
+
+async function save(mode) {
+  const body = {table: TABLE, id: sel, mode, value: $('ev').value, evidence: $('ee').value, footnote: $('ef').value};
+  $('msg').textContent = '저장 중…';
+  const r = await fetch('/api/review/cell?table=' + TABLE, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  const d = await r.json();
+  if (!r.ok) { $('msg').textContent = '⚠ ' + d.error; return; }
+  setData(d); $('msg').textContent = '저장됨 · table.csv, document.md 갱신';
+}
+$('bconfirm').onclick = () => save('confirm');
+$('bcorrect').onclick = () => save('correct');
+$('bflag').onclick = () => save('flag');
+$('bclear').onclick = () => save('clear');
+load();
+</script>
+</body>
+</html>

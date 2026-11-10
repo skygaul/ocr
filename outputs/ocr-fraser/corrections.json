@@ -1,0 +1,59 @@
+{
+  "R3C0": {
+    "value": "Mar. 28",
+    "evidence": "원본 확대 대조: 'Mar.'의 a 글자가 인쇄 손상으로 뭉개져 보임(OCR 'Mür.', 신뢰도 0.86). 날짜 순서(Feb. 28 → Mar. 28 → Apr. 25)와 행 합계(52,579) 일치로 'Mar. 28'로 확정.",
+    "note": "원시 'Mür. 28' → 'Mar. 28'"
+  },
+  "R9C2": {
+    "value": "13767",
+    "evidence": "원본 확대 대조: Sept. 26 행의 Within 15 days 칸은 13, 767. OCR은 13,707로 읽음. 행 합계(20,314 = 13,767+770+495+5,251+27+4)도 일치.",
+    "note": "원시 13,707 → 13,767 (자동 힌트와 원본이 일치)"
+  },
+  "R9C6": {
+    "value": "27",
+    "evidence": "원본 확대 대조: 27 일치. 합계 불일치 때 후보(27→87)로 의심됐으나 원본은 27이고 오류는 R9C2였음."
+  },
+  "R23C7": {
+    "value": "2",
+    "evidence": "원본 확대 대조: Nov. 27 행의 Over 6 months = 2. OCR이 아래 행의 8과 한 박스('28')로 읽은 것을 분리한 값(신뢰도 0.82). 행 합계 6,032 일치."
+  },
+  "R24C7": {
+    "value": "8",
+    "evidence": "원본 확대 대조: Dec. 31 행의 Over 6 months = 8. '28' 박스에서 분리한 값(신뢰도 0.82). 행 합계 4,672 일치."
+  },
+  "C0": {
+    "value": "No. 11.—HOLDINGS OF BILLS DISCOUNTED AND BILLS BOUGHT BY FEDERAL",
+    "evidence": "원본 대조: 'No. 11.—HOLDINGS …' (OCR이 대시 뒤에 불필요한 '-'를 하나 더 읽음)",
+    "note": "원시 'No. 11.—-HOLDINGS' → 'No. 11.—HOLDINGS'"
+  },
+  "C1": {
+    "value": "RESERVE BANKS, BY MATURITIES, 1934–35",
+    "evidence": "원본 대조: 연도 범위는 en dash(1934–35). OCR은 하이픈으로 읽음(글자·숫자는 동일).",
+    "note": "원시 '1934-35' → '1934–35' (구두점만)"
+  },
+  "C2": {
+    "value": "[In thousands of dollars]",
+    "evidence": "원본 대조 일치 — 단위는 천 달러"
+  },
+  "S0": {
+    "value": "Maturity",
+    "evidence": "원본 대조 일치 (가로선 아래 여섯 구간 열을 묶는 제목)"
+  },
+  "H0C6": {
+    "value": "91 days\nto 6\nmonths",
+    "evidence": "원본 대조: '91 days to 6 months' (3줄로 줄바꿈된 열 제목, 신뢰도 0.90)"
+  },
+  "H0C7": {
+    "value": "Over 6\nmonths",
+    "evidence": "원본 대조: 'Over 6 months' (신뢰도 0.93)"
+  },
+  "N0": {
+    "value": "Back figures.—See Annual Report for 1934 (table 26) and similar tables in previous annual reports.",
+    "evidence": "원본 대조 일치"
+  },
+  "R26C0": {
+    "value": "1934—Jan. 31",
+    "evidence": "원본 대조: 연도와 월 사이에 줄표(—)가 인쇄되어 있음(구역 1의 '1934—Jan. 31'과 동일). OCR이 줄표를 놓침(글자·숫자는 동일).",
+    "note": "원시 '1934Jan.31' → '1934—Jan. 31' (구두점)"
+  }
+}

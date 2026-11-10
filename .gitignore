@@ -1,0 +1,10 @@
+uploads/
+results/
+__pycache__/
+*.pyc
+# input/ 에 같은 파일이 있는 중복 원본
+/ocr-test.png
+/fraser-table.png
+# 제출용 캡처(outputs/screens/submit/)만 저장소에 포함
+/outputs/screens/*.png
+/outputs/screens/design/
